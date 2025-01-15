@@ -17,7 +17,6 @@ default = []
 metal = ["risc0-zkvm/metal"]
 prove = ["risc0-zkvm/prove"]
 
-
 [dev-dependencies]
 bencher = "0.1"
 

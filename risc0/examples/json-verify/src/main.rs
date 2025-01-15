@@ -28,7 +28,7 @@ fn main() {
     let mut receipt_json = String::new();
     file.read_to_string(&mut receipt_json).expect("failed to read");
 
-    let new_hash_id: [u32; 8] = [339319233, 4063188989, 4170609565, 2224176576, 287885759, 1724875729, 2251923562, 2997378531];    
+    let new_hash_id: [u32; 8] = [2954781439, 360400680, 128778852, 2862781656, 1086678713, 1220965596, 544534159, 677377450];    
     let receipt = serde_json::from_str::<Receipt>(&receipt_json).unwrap();
     let flag = receipt.verify(new_hash_id).unwrap();
 

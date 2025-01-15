@@ -9,6 +9,11 @@ First, follow the [examples guide] to install dependencies and check out the cor
 Then, run the example with:
 
 ```bash
+#downgrade risczero to v1.0.5
+rzup install cargo-risczero v1.0.5
+```
+
+```bash
 cargo run --release
 ```
 
