@@ -2605,7 +2605,9 @@ dependencies = [
 name = "json-validate"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bencher",
+ "hex",
  "json-validate-core",
  "json-validate-methods",
  "jsonschema",

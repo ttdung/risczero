@@ -15,9 +15,15 @@
 // use jsonschema::{Draft, JSONSchema};
 // use json_validate_core::Outputs;
 use json_validate_methods::{CHECK_SCHEMA_ELF,CHECK_SCHEMA_ID};
+// use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use risc0_zkvm::{default_prover, ExecutorEnv};
-use std::fs::File;
+use anyhow::Result;
+use std::env;
+
 use std::io::Write;
+use std::fs;
+use std::fs::File;
+// use std::io::{self, Read};
 
 fn main() {
     // let data = include_str!("../res/data_complex_obj.json");
@@ -25,24 +31,29 @@ fn main() {
 
     // let data = include_str!("../res/data_array.json");
     // let schema = include_str!("../res/schema_array.json");
+    let args: Vec<String> = env::args().collect();
 
-    let data = include_str!("../res/data.json");
-    let schema = include_str!("../res/schema.json");
+    let filename = &args[1];
 
-    let outputs = check_schema(data, schema);
+    if filename.len() == 0 {
+        eprintln!("Error NO input file:");
+    }
+    // let data = include_str!(filename);
+    println!("input {}", filename);
+
+    let contents = fs::read_to_string(filename)
+    .expect("Should have been able to read the file");
+
+    // let outputs = 
+    let outputs = check_schema(&contents);
     println!();
-    println!("validate schema result {}", outputs);
+    println!("validate schema result {:?}", outputs);
 
     // benchmark_prove(data, schema);
 }
 
-fn check_schema(data: &str, schema: &str) -> u32 {
-    let input = (data, schema);
-    println!("data {}", data);
-    println!("schema {}", schema);
-
-    // Obtain the default prover.
-    let prover = default_prover();
+fn check_schema(input: &str) -> Result<()> {
+    println!("input {}", input);
 
     let env = ExecutorEnv::builder()
         .write(&input)
@@ -50,10 +61,35 @@ fn check_schema(data: &str, schema: &str) -> u32 {
         .build()
         .unwrap();
 
+
+    // let receipt = default_prover()
+    //     .prove_with_ctx(
+    //         env,
+    //         &VerifierContext::default(),
+    //         CHECK_SCHEMA_ELF,
+    //         &ProverOpts::groth16(),
+    //     )?
+    //     .receipt;
+
+
+    // Obtain the default prover.
+    let prover = default_prover();
+
     // Produce a receipt by proving the specified ELF binary.
     let receipt = prover.prove(env, CHECK_SCHEMA_ELF).unwrap().receipt;
 
     receipt.verify(CHECK_SCHEMA_ID).unwrap();
+
+    // Extract the journal from the receipt.
+    // let journal = receipt.journal.bytes.clone();
+
+    // let seal_hex_string = vec_to_hex_string(&seal);
+    // println!("seal hex_string: {}", seal_hex_string);
+
+    // let x = Vec<u8>.from(journal);
+
+    // let x_hex_string = vec_to_hex_string(&journal);
+    // println!("x: 0x{}", x_hex_string);
 
     // Dump receipe using serde
     let receipt_json = serde_json::to_string_pretty(&receipt).unwrap();
@@ -64,8 +100,8 @@ fn check_schema(data: &str, schema: &str) -> u32 {
 
     // println!("Data written to file successfully.");
 
-    receipt.journal.decode().unwrap()
-
+    // receipt.journal.decode().unwrap()
+    Ok(())
 }
 
 /*

@@ -19,9 +19,11 @@ use risc0_zkvm::{
 };
 
 fn main() {
-    let (datastr, schemastr): (String, String) = env::read();
+    let datastr : String = env::read();
 
     let d : serde_json::Value  = serde_json::from_str(&datastr).unwrap();
+
+    let schemastr = include_str!("res/schema.json");
     let s : serde_json::Value  = serde_json::from_str(&schemastr).unwrap();
 
     let data = json!(&d);
@@ -58,10 +60,5 @@ fn main() {
         rs = 1;
     }
 
-    // let out = Outputs {
-    //     result: rs,
-    // };
-
     env::commit(&rs);
-
 }
