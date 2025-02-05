@@ -14,12 +14,19 @@
 // use serde_json::json;
 // use jsonschema::{Draft, JSONSchema};
 // use json_validate_core::Outputs;
+// use alloy::sol_types::SolValue;
+
 use json_validate_methods::{CHECK_SCHEMA_ELF,CHECK_SCHEMA_ID};
-use risc0_zkvm::{default_prover, ExecutorEnv};
+// use risc0_zkvm::{default_prover, ExecutorEnv};
+use risc0_zkvm::{compute_image_id,default_prover, ExecutorEnv, ProverOpts, VerifierContext, InnerReceipt, sha::Digestible};
 use std::fs::File;
 use std::io::Write;
+use anyhow::{Result, bail};
+
+// use std::time::Instant;
 
 fn main() {
+    // let data = "{\"name1\": \"John Doe\",\"age\": 23}";
     // let data = include_str!("../res/data_complex_obj.json");
     // let schema = include_str!("../res/schema_complex_obj.json");
 
@@ -29,20 +36,19 @@ fn main() {
     let data = include_str!("../res/data.json");
     let schema = include_str!("../res/schema.json");
 
-    let outputs = check_schema(data, schema);
-    println!();
-    println!("validate schema result {}", outputs);
+    // let outputs = check_schema(data, schema);
+    // println!();
+    // println!("validate schema result {}", outputs);
 
-    // benchmark_prove(data, schema);
+    // let _ = benchmark_prove(data, schema);
+    let _ = check_schema(data, schema);
 }
 
-fn check_schema(data: &str, schema: &str) -> u32 {
+
+fn check_schema(data: &str, schema: &str) -> Result<()> {
     let input = (data, schema);
     println!("data {}", data);
     println!("schema {}", schema);
-
-    // Obtain the default prover.
-    let prover = default_prover();
 
     let env = ExecutorEnv::builder()
         .write(&input)
@@ -50,28 +56,95 @@ fn check_schema(data: &str, schema: &str) -> u32 {
         .build()
         .unwrap();
 
-    // Produce a receipt by proving the specified ELF binary.
-    let receipt = prover.prove(env, CHECK_SCHEMA_ELF).unwrap().receipt;
+    // // Obtain the default prover.
+    let prover = default_prover();
+
+    // // Produce a receipt by proving the specified ELF binary.
+    // let receipt = prover.prove(env, CHECK_SCHEMA_ELF).unwrap().receipt;
+
+
+    let receipt = prover.prove_with_ctx(
+        env,
+        &VerifierContext::default(),
+        CHECK_SCHEMA_ELF,
+        &ProverOpts::groth16(),
+    )?
+    .receipt;
 
     receipt.verify(CHECK_SCHEMA_ID).unwrap();
 
+    // Encode the seal with the selector.
+    let seal = encode_seal(&receipt)?;
+
+    // let seal_hex_string = vec_to_hex_string(&seal);
+    println!("seal hex_string: {}", hex::encode(seal));
+
+        
+    // Extract the journal from the receipt.
+    let journal = receipt.journal.bytes.clone();
+
+    // Decode Journal: Upon receiving the proof, the application decodes the journal to extract
+    // the verified number. This ensures that the number being submitted to the blockchain matches
+    // the number that was verified off-chain.
+
+
+    println!("journal: {}", hex::encode(journal));
+
+
+    // Compute the Image ID
+    let image_id = hex::encode(compute_image_id(CHECK_SCHEMA_ELF)?);
+
+    println!("Image ID: {}", image_id);
+
     // Dump receipe using serde
     let receipt_json = serde_json::to_string_pretty(&receipt).unwrap();
-        
+
     // Write the JSON string to a file
-    let mut file = File::create("./res/receipt.json").expect("failed to create file");
+    let mut file = File::create("./res/receipt_groth16.json").expect("failed to create file");
     file.write_all(receipt_json.as_bytes()).expect("failed to write");
 
     // println!("Data written to file successfully.");
 
-    receipt.journal.decode().unwrap()
+    // receipt.journal.decode.unwrap();
+    Ok(())
+}
 
+// fn vec_to_hex_string(vec: &[u8]) -> String { 
+//     let mut hex_string = String::from("0x"); 
+//     for byte in vec { 
+//         hex_string.push_str(&format!("{:02x}", byte)); 
+//     } 
+//     hex_string 
+// }
+
+pub fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>> {
+    let seal = match receipt.inner.clone() {
+        InnerReceipt::Fake(receipt) => {
+            let seal = receipt.claim.digest().as_bytes().to_vec();
+            let selector = &[0u8; 4];
+            // Create a new vector with the capacity to hold both selector and seal
+            let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+            selector_seal.extend_from_slice(selector);
+            selector_seal.extend_from_slice(&seal);
+            selector_seal
+        }
+        InnerReceipt::Groth16(receipt) => {
+            let selector = &receipt.verifier_parameters.as_bytes()[..4];
+            // Create a new vector with the capacity to hold both selector and seal
+            let mut selector_seal = Vec::with_capacity(selector.len() + receipt.seal.len());
+            selector_seal.extend_from_slice(selector);
+            selector_seal.extend_from_slice(receipt.seal.as_ref());
+            selector_seal
+        }
+        _ => bail!("Unsupported receipt type"),
+    };
+    Ok(seal)
 }
 
 /*
-fn benchmark_prove(data: &str, schema: &str) {
+fn benchmark_prove(data: &str, schema: &str) ->Result<()>{
     // start benchmarks
-    const ITER: usize = 3;
+    const ITER: usize = 1;
     let mut benches = Vec::new();
     let mut benches_verify = Vec::new();
 
@@ -88,7 +161,14 @@ fn benchmark_prove(data: &str, schema: &str) {
 
         let before = Instant::now();
         // Produce a receipt by proving the specified ELF binary.
-        let receipt  = prover.prove(env, CHECK_SCHEMA_ELF).unwrap().receipt;
+        // let receipt  = prover.prove(env, CHECK_SCHEMA_ELF).unwrap().receipt;
+        let receipt = prover.prove_with_ctx(
+            env,
+            &VerifierContext::default(),
+            CHECK_SCHEMA_ELF,
+            &ProverOpts::groth16(),
+        )?
+        .receipt;
         // println!("\n###### Time: {:.2?}", before.elapsed());
         benches.push(before.elapsed());
 
@@ -111,6 +191,7 @@ fn benchmark_prove(data: &str, schema: &str) {
     println!("\n---------------------------");
     // end benchmarks
 
+    Ok(())
 }
 */
 #[cfg(test)]

@@ -6,17 +6,19 @@ edition = "2021"
 [dependencies]
 json-validate-core = { path = "core" }
 json-validate-methods = { path = "methods" }
-risc0-zkvm = { path = "../../risc0/zkvm" }
+risc0-zkvm = { version = "1.0.5", path = "../../risc0/zkvm" }
+#risc0-zkvm = { version = "1.0.5"}
 serde = "1.0"
 serde_json = "1.0"
 jsonschema = {version = "0.8", default-features = false}
+anyhow = { version = "1.0.75" }
+hex = { version = "0.4", default-features = false }
 
 [features]
 cuda = ["risc0-zkvm/cuda"]
 default = []
 metal = ["risc0-zkvm/metal"]
 prove = ["risc0-zkvm/prove"]
-
 
 [dev-dependencies]
 bencher = "0.1"
@@ -25,3 +27,4 @@ bencher = "0.1"
 name = "prove"
 harness = false
 path = "benches/bench.rs"
+

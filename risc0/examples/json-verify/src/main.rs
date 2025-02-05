@@ -24,11 +24,12 @@ pub struct Outputs {
 fn main() {
 
     // Read the JSON string back from the file
-    let mut file = File::open("./res/receipt.json").expect("failed to open");
+    let mut file = File::open("./res/receipt_groth16.json").expect("failed to open");
     let mut receipt_json = String::new();
     file.read_to_string(&mut receipt_json).expect("failed to read");
 
-    let new_hash_id: [u32; 8] = [339319233, 4063188989, 4170609565, 2224176576, 287885759, 1724875729, 2251923562, 2997378531];    
+    // let new_hash_id: [u32; 8] = [339319233, 4063188989, 4170609565, 2224176576, 287885759, 1724875729, 2251923562, 2997378531];    
+    let new_hash_id: [u32; 8] = [3793691883, 1802055079, 2574832917, 2074072335, 3224147033, 1002440944, 3878052659, 862307299];
     let receipt = serde_json::from_str::<Receipt>(&receipt_json).unwrap();
     let flag = receipt.verify(new_hash_id).unwrap();
 

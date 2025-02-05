@@ -13,7 +13,7 @@
 // limitations under the License.
 use serde_json::json;
 use jsonschema::{Draft, JSONSchema};
-use json_validate_core::Outputs;
+// use json_validate_core::Outputs;
 use risc0_zkvm::{
     guest::env,
 };
@@ -22,19 +22,19 @@ fn main() {
     let (datastr, schemastr): (String, String) = env::read();
 
     let d : serde_json::Value  = serde_json::from_str(&datastr).unwrap();
-    let s : serde_json::Value  = serde_json::from_str(&schemastr).unwrap();
+    // let s : serde_json::Value  = serde_json::from_str(&schemastr).unwrap();
 
     let data = json!(&d);
-    let schema = json!(&s);
+    // let schema = json!(&s);
 
-    println!(
-        "json data {}",
-        data
-    );
-    println!(
-        "json schema {}",
-        schema
-    );
+    let schema = json!({
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "age": { "type": "integer" }
+        },
+        "required": ["name", "age"]
+    });
 
     // Compile the schema
     let compiled_schema = JSONSchema::options()
