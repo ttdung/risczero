@@ -3,6 +3,9 @@ name = "json-validate"
 version = "0.1.0"
 edition = "2021"
 
+[build-dependencies]
+anyhow = "1.0"
+
 [dependencies]
 json-validate-core = { path = "core" }
 json-validate-methods = { path = "methods" }

@@ -22,7 +22,7 @@ use risc0_zkvm::{compute_image_id,default_prover, ExecutorEnv, ProverOpts, Verif
 use std::fs::File;
 use std::io::Write;
 use anyhow::{Result, bail};
-
+// use std::env;
 // use std::time::Instant;
 
 fn main() {
@@ -35,6 +35,17 @@ fn main() {
 
     let data = include_str!("../res/data.json");
     let schema = include_str!("../res/schema.json");
+    // let args: Vec<String> = env::args().collect();
+    // let filename = &args[1];
+
+    // if filename.len() == 0 {
+    //     eprintln!("Error NO input file:");
+    // }
+    // let data = include_str!(filename);
+    // println!("input {}", filename);
+
+    // let contents = fs::read_to_string(filename)
+    // .expect("Should have been able to read the file");
 
     // let outputs = check_schema(data, schema);
     // println!();
